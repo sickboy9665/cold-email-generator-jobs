@@ -1,0 +1,4 @@
+Langchain Grok ---> https://python.langchain.com/docs/integrations/chat/groq/
+
+Vector Database Chroma DB ----> https://www.trychroma.com/
+--> Model used in Chroma DB ---> https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
