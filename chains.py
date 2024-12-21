@@ -38,7 +38,7 @@ class Chain:
             raise OutputParserException("Context too big. Unable to parse jobs.")
         return res if isinstance(res, list) else [res]
 
-    def write_mail(self, job, links, skillscsv, tone, full_name):
+    def write_mail(self, job, links, skillscsv, tone, full_name, linkedin):
         prompt_tone_mapping = {
             "Highly Professional": "Maintain a formal tone, emphasizing professionalism and precision.",
             "Mildly Professional": "Use a friendly and approachable tone while staying professional.",
@@ -47,7 +47,7 @@ class Chain:
         }
 
         selected_tone_instruction = prompt_tone_mapping.get(tone, "Maintain a formal tone.")
-
+        
         prompt_email = PromptTemplate.from_template(
             f"""
             ### JOB DESCRIPTION:
@@ -56,7 +56,7 @@ class Chain:
             ### INSTRUCTION:
             You are a job seeker with 3.6 years of experience in your field, writing an email in the following tone: {selected_tone_instruction}.
             Highlight your relevant skills: {{skillscsv}}, and experiences that directly align with the job description, showcasing your ability to contribute effectively to the company's goals. 
-            Mention that you can be reached on LinkedIn: {{link_list}}.
+            Link to your portfolio: {{link_list}}. Mention that you can be reached on LinkedIn: {{LinkedIn}}
             Conclude the email with one sign-off, either "Best regards" or "Thanks and regards," followed by: "{{full_name}}".
             Avoid using multiple sign-offs in the email.
             ### EMAIL (NO PREAMBLE):
@@ -68,7 +68,8 @@ class Chain:
             "job_description": str(job),
             "link_list": links,
             "skillscsv": skillscsv,
-            "full_name": full_name
+            "full_name": full_name,
+            "LinkedIn": linkedin,
         })
         return res.content
 

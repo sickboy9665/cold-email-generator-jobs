@@ -1,7 +1,7 @@
-__import__('pysqlite3')
-import sys
+# __import__('pysqlite3')
+# import sys
 
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import streamlit as st
 from langchain_community.document_loaders import WebBaseLoader
 
@@ -14,6 +14,8 @@ def create_streamlit_app(llm, portfolio, clean_text):
     
     # Input for full name
     full_name = st.text_input("Enter your full name:", value="")
+    
+    linkedinUrl = st.text_input("Enter your LinkedIn Profile URL:", value="")
     
     # Input for URL
     url_input = st.text_input("Enter a Careers Page URL:", value="")
@@ -41,12 +43,12 @@ def create_streamlit_app(llm, portfolio, clean_text):
             portfolio.load_portfolio()
             jobs = llm.extract_jobs(data)
             skillsCsv = portfolio.getSkills()
-            
+            linkincsv = portfolio.getlinks()
             for job in jobs:
                 # Query links and generate email
                 skills = job.get('skills', [])
                 links = portfolio.query_links(skills)
-                email = llm.write_mail(job, links, skillsCsv, tone, full_name)
+                email = llm.write_mail(job, linkincsv, skillsCsv, tone, full_name,linkedinUrl)
                 
                 # Display the email
                 st.subheader(f"Email for {job.get('role')}")
