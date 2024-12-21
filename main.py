@@ -1,26 +1,31 @@
-__import__('pysqlite3')
-import sys
+# __import__('pysqlite3')
+# import sys
 
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import streamlit as st
 from langchain_community.document_loaders import WebBaseLoader
-
 from chains import Chain
-from portfolio import Portfolio
 from utils import clean_text
 
-def create_streamlit_app(llm, portfolio, clean_text):
+def create_streamlit_app(llm, clean_text):
     st.title("📧 Cold Mail Generator")
     
     # Input for full name
     full_name = st.text_input("Enter your full name:", value="")
     
-    linkedinUrl = st.text_input("Enter your LinkedIn Profile URL:", value="")
+    # Input for LinkedIn Profile URL
+    linkedin_url = st.text_input("Enter your LinkedIn Profile URL:", value="")
     
-    # Input for URL
+    # Input for URL of careers page
     url_input = st.text_input("Enter a Careers Page URL:", value="")
     
-    # Tone selection dropdown
+    # Input skills manually
+    skills_input = st.text_area(
+        "Enter your skills (comma-separated):",
+        placeholder="e.g., Python, Angular, AI, SQL",
+    )
+    
+    # Email tone selection
     tone = st.selectbox(
         "Select Email Tone:",
         ["Highly Professional", "Mildly Professional", "Humorous", "Casual"]
@@ -34,38 +39,43 @@ def create_streamlit_app(llm, portfolio, clean_text):
             st.error("Please enter your full name.")
             return
         
+        if not skills_input.strip():
+            st.error("Please enter your skills.")
+            return
+        
         try:
-            # Load the webpage and clean the text
+            # Load and clean text from the provided URL
             loader = WebBaseLoader([url_input])
             data = clean_text(loader.load().pop().page_content)
             
-            # Load portfolio and extract jobs
-            portfolio.load_portfolio()
+            # Extract jobs from the careers page
             jobs = llm.extract_jobs(data)
-            skillsCsv = portfolio.getSkills()
-            linkincsv = portfolio.getlinks()
+            
+            # Parse skills from user input
+            skills_list = [skill.strip() for skill in skills_input.split(',') if skill.strip()]
+            
             for job in jobs:
-                # Query links and generate email
-                skills = job.get('skills', [])
-                links = portfolio.query_links(skills)
-                email = llm.write_mail(job, linkincsv, skillsCsv, tone, full_name,linkedinUrl)
+                # Generate email for each job
+                email = llm.write_mail(
+                    job=job,
+                    links=[],
+                    skillscsv=skills_list,
+                    tone=tone,
+                    full_name=full_name,
+                    linkedin=linkedin_url,
+                )
                 
                 # Display the email
                 st.subheader(f"Email for {job.get('role')}")
                 st.code(email, language='markdown')
-                
-                # Provide editing option
-                # edited_email = st.text_area(f"Edit the Email for {job.get('role')}:", value=email, height=300)
-                # if st.button(f"Save Email for {job.get('role')}"):
-                #     st.success(f"Email for {job.get('role')} saved!")
         except Exception as e:
-            st.error(f"An Error Occurred: {e}")
+            st.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     chain = Chain()
-    portfolio = Portfolio()  # Make sure to implement or import Portfolio
     st.set_page_config(layout="wide", page_title="Cold Email Generator", page_icon="📧")
-    create_streamlit_app(chain, portfolio, clean_text)
+    create_streamlit_app(chain, clean_text)
+
 
 # def create_streamlit_app(llm, portfolio, clean_text):
 #     st.title("📧 Cold Mail Generator")

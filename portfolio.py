@@ -1,29 +1,31 @@
-import pandas as pd
-import chromadb
-import uuid
-__import__('pysqlite3')
-import sys
+# import pandas as pd
+# import chromadb
+# import uuid
+# # __import__('pysqlite3')
+# # import sys
 
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+## IF NEEDED FROM CSV FILE USE THIS!!
 
-class Portfolio:
-    def __init__(self, file_path="resources/my_portfolio.csv"):
-        self.file_path = file_path
-        self.data = pd.read_csv(file_path)
-        self.chroma_client = chromadb.PersistentClient('vectorstore')
-        self.collection = self.chroma_client.get_or_create_collection(name="portfolio")
+# # sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-    def load_portfolio(self):
-        if not self.collection.count():
-            for _, row in self.data.iterrows():
-                self.collection.add(documents=row["Techstack"],
-                                    metadatas={"links": row["Links"]},
-                                    ids=[str(uuid.uuid4())])
+# class Portfolio:
+#     def __init__(self, file_path="resources/my_portfolio.csv"):
+#         self.file_path = file_path
+#         self.data = pd.read_csv(file_path)
+#         self.chroma_client = chromadb.PersistentClient('vectorstore')
+#         self.collection = self.chroma_client.get_or_create_collection(name="portfolio")
 
-    def query_links(self, skills):
-        return self.collection.query(query_texts=skills, n_results=2).get('metadatas', [])
+#     def load_portfolio(self):
+#         if not self.collection.count():
+#             for _, row in self.data.iterrows():
+#                 self.collection.add(documents=row["Techstack"],
+#                                     metadatas={"links": row["Links"]},
+#                                     ids=[str(uuid.uuid4())])
 
-    def getSkills(self):
-        return self.data['Techstack'].tolist()
-    def getlinks(self):
-        return self.data['Links'].tolist()
+#     def query_links(self, skills):
+#         return self.collection.query(query_texts=skills, n_results=2).get('metadatas', [])
+
+#     def getSkills(self):
+#         return self.data['Techstack'].tolist()
+#     def getlinks(self):
+#         return self.data['Links'].tolist()
