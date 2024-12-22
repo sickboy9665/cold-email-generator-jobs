@@ -38,7 +38,7 @@ class Chain:
             raise OutputParserException("Context too big. Unable to parse jobs.")
         return res if isinstance(res, list) else [res]
 
-    def write_mail(self, job, links, skillscsv, tone, full_name, linkedin):
+    def write_mail(self, job, links, skillscsv, tone, full_name, linkedin, experience):
         prompt_tone_mapping = {
             "Highly Professional": "Maintain a formal tone, emphasizing professionalism and precision.",
             "Mildly Professional": "Use a friendly and approachable tone while staying professional.",
@@ -54,7 +54,7 @@ class Chain:
             {{job_description}}
             
             ### INSTRUCTION:
-            You are a job seeker with 3.6 years of experience in your field, writing an email in the following tone: {selected_tone_instruction}.
+            You are a job seeker with {{experience}} of experience in your field, writing an email in the following tone: {selected_tone_instruction}.
             Highlight your relevant skills: {{skillscsv}}, and experiences that directly align with the job description, showcasing your ability to contribute effectively to the company's goals. 
             Link to your portfolio: {{link_list}}. Mention that you can be reached on LinkedIn: {{LinkedIn}}
             Conclude the email with one sign-off, either "Best regards" or "Thanks and regards," followed by: "{{full_name}}".
@@ -70,6 +70,56 @@ class Chain:
             "skillscsv": skillscsv,
             "full_name": full_name,
             "LinkedIn": linkedin,
+            "experience": experience
+        })
+        return res.content
+    
+    def extract_skills_from_resume(self, resume_text):
+        prompt_extract_skills = PromptTemplate.from_template(
+            """
+            ### RESUME TEXT:
+            {resume_text}
+            ### INSTRUCTION:
+            Extract the list of professional skills from the provided resume text and return them as a JSON array. Only return valid JSON.
+            ### JSON ARRAY (NO PREAMBLE):
+            """
+        )
+        chain_extract_skills = prompt_extract_skills | self.llm
+        res = chain_extract_skills.invoke(input={"resume_text": resume_text})
+        try:
+            json_parser = JsonOutputParser()
+            skills = json_parser.parse(res.content)
+        except OutputParserException:
+            raise OutputParserException("Unable to parse skills.")
+        return skills
+
+    def generate_cover_letter(self, job, skillscsv, full_name, linkedin, experience):
+        prompt_cover_letter = PromptTemplate.from_template(
+            """
+            ### JOB DESCRIPTION:
+            {job_description}
+
+            ### INSTRUCTION:
+            Write a personalized and engaging cover letter tailored to the job description above. 
+            Include the following:
+            - Address the hiring manager appropriately (use "Dear Hiring Manager" if the name is unknown).
+            - A brief introduction highlighting {full_name}'s experience ({experience}) in the relevant field.
+            - Mention the skills: {skillscsv}, aligning them with the job requirements and showcasing how they contribute to the role.
+            - Emphasize your enthusiasm for the role and how you align with the company's goals.
+            - Provide a link to your LinkedIn profile: {LinkedIn}.
+            - Use a formal yet approachable tone.
+            - End with a professional sign-off, "Best regards" or "Sincerely," followed by "{full_name}".
+            ### COVER LETTER (NO PREAMBLE):
+            """
+        )
+
+        chain_cover_letter = prompt_cover_letter | self.llm
+        res = chain_cover_letter.invoke({
+            "job_description": str(job),
+            "skillscsv": skillscsv,
+            "full_name": full_name,
+            "LinkedIn": linkedin,
+            "experience": experience
         })
         return res.content
 
